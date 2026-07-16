@@ -1,43 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import {
-  subscribeToMyRooms,
-  subscribeToJoinedRooms,
-} from "@/lib/firestore/rooms";
 import { useAuth } from "@/hooks/useAuth";
+import { useRooms } from "@/hooks/useRooms";
 import { RoomsHeader } from "@/components/rooms/RoomsHeader";
-import { RoomsSkeleton } from "@/components/skeletons/RoomsSkeleton";
 import { RoomsEmpty } from "@/components/rooms/RoomsEmpty";
 import { RoomsList } from "@/components/rooms/RoomsList";
-import type { Room } from "@/types";
 
 export default function RoomsPage() {
   const { user, loading } = useAuth();
-  const [myRooms, setMyRooms] = useState<(Room & { id: string })[]>([]);
-  const [joinedRooms, setJoinedRooms] = useState<(Room & { id: string })[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { myRooms, joinedRooms, isLoading } = useRooms(user?.uid);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const unsubscribeMyRooms = subscribeToMyRooms(user.uid, (rooms) => {
-      setMyRooms(rooms);
-      setIsLoading(false);
-    });
-
-    const unsubscribeJoinedRooms = subscribeToJoinedRooms(user.uid, (rooms) => {
-      const filtered = rooms.filter((room) => room.createdBy !== user.uid);
-      setJoinedRooms(filtered);
-    });
-
-    return () => {
-      unsubscribeMyRooms();
-      unsubscribeJoinedRooms();
-    };
-  }, [user]);
 
   if (loading || isLoading) {
     return (
@@ -56,14 +30,7 @@ export default function RoomsPage() {
     <div className="space-y-8 p-4 sm:p-8">
       <RoomsHeader isCreateOpen={isCreateOpen} onOpenChange={setIsCreateOpen} />
 
-      {isLoading ? (
-        <>
-          <section>
-            <h2 className="text-2xl font-bold mb-4">Мої кімнати</h2>
-            <RoomsSkeleton />
-          </section>
-        </>
-      ) : hasNoRooms ? (
+      {hasNoRooms ? (
         <RoomsEmpty isCreateOpen={isCreateOpen} onOpenChange={setIsCreateOpen} />
       ) : (
         <RoomsList myRooms={myRooms} joinedRooms={joinedRooms} />
