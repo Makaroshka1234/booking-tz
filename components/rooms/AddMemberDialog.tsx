@@ -1,46 +1,36 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { toast } from "sonner"
-import { addMember } from "@/lib/firestore/roomMembers"
-import { fetchUsersPage } from "@/lib/firestore/users"
-import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { addMember } from "@/lib/firestore/roomMembers";
+import { fetchUsersPage } from "@/lib/firestore/users";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import type { User } from "@/types"
+} from "@/components/ui/dialog";
+import type { User } from "@/types";
+import type { QueryDocumentSnapshot } from "firebase/firestore";
 
 interface AddMemberDialogProps {
-  roomId: string
-  excludeUids?: string[]
-  onSuccess?: () => void
+  roomId: string;
+  excludeUids?: string[];
+  onSuccess?: () => void;
 }
 
 interface UserWithUid extends User {
-  uid: string
+  uid: string;
 }
 
 export function AddMemberDialog({
@@ -48,105 +38,119 @@ export function AddMemberDialog({
   excludeUids = [],
   onSuccess,
 }: AddMemberDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<UserWithUid | null>(null)
-  const [role, setRole] = useState<"admin" | "user">("user")
-  const [searchValue, setSearchValue] = useState("")
-  const [allUsers, setAllUsers] = useState<UserWithUid[]>([])
-  const [cursor, setCursor] = useState<any>(null)
-  const [hasMore, setHasMore] = useState(true)
-  const [popoverOpen, setPopoverOpen] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithUid | null>(null);
+  const [role, setRole] = useState<"admin" | "user">("user");
+  const [searchValue, setSearchValue] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [allUsers, setAllUsers] = useState<UserWithUid[]>([]);
+  const [cursor, setCursor] = useState<QueryDocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Load initial users when dialog opens
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     const loadInitialUsers = async () => {
-      setIsLoadingUsers(true)
+      setIsLoadingUsers(true);
       try {
-        const { users, nextCursor } = await fetchUsersPage()
-        setAllUsers(users)
-        setCursor(nextCursor)
-        setHasMore(nextCursor !== null)
-      } catch (error) {
-        toast.error("✕ Помилка при завантаженні користувачів")
+        const { users, nextCursor } = await fetchUsersPage();
+        setAllUsers(users);
+        setCursor(nextCursor);
+        setHasMore(nextCursor !== null);
+      } catch {
+        toast.error("✕ Помилка при завантаженні користувачів");
       } finally {
-        setIsLoadingUsers(false)
+        setIsLoadingUsers(false);
       }
+    };
+
+    loadInitialUsers();
+  }, [isOpen]);
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setSelectedUser(null);
+      setRole("user");
+      setSearchValue("");
+      setDropdownOpen(false);
+      setAllUsers([]);
+      setCursor(null);
+      setHasMore(true);
     }
+  };
 
-    loadInitialUsers()
-  }, [isOpen])
-
-  // Intersection observer for pagination
   useEffect(() => {
-    if (!popoverOpen || !sentinelRef.current || !hasMore || isLoadingMore) return
+    if (!dropdownOpen || !hasMore || isLoadingMore) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
 
     const observer = new IntersectionObserver(
       async (entries) => {
-        if (!entries[0].isIntersecting) return
+        if (!entries[0].isIntersecting) return;
 
-        setIsLoadingMore(true)
+        setIsLoadingMore(true);
         try {
-          const { users: newUsers, nextCursor: newCursor } = await fetchUsersPage(
-            cursor
-          )
-          setAllUsers((prev) => [...prev, ...newUsers])
-          setCursor(newCursor)
-          setHasMore(newCursor !== null)
-        } catch (error) {
-          toast.error("✕ Помилка при завантаженні більше користувачів")
+          const { users: newUsers, nextCursor } = await fetchUsersPage(
+            cursor ?? undefined,
+          );
+          setAllUsers((prev) => [...prev, ...newUsers]);
+          setCursor(nextCursor);
+          setHasMore(nextCursor !== null);
+        } catch {
+          toast.error("✕ Помилка при завантаженні більше користувачів");
         } finally {
-          setIsLoadingMore(false)
+          setIsLoadingMore(false);
         }
       },
-      { rootMargin: "100px" }
-    )
+      { rootMargin: "100px" },
+    );
 
-    observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [popoverOpen, cursor, hasMore, isLoadingMore])
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [dropdownOpen, cursor, hasMore, isLoadingMore]);
 
   const filteredUsers = allUsers.filter((user) => {
-    if (excludeUids.includes(user.uid)) return false
-    if (!searchValue) return true
-    return user.email.toLowerCase().includes(searchValue.toLowerCase())
-  })
+    if (excludeUids.includes(user.uid)) return false;
+    if (!searchValue) return true;
+    return user.email.toLowerCase().includes(searchValue.toLowerCase());
+  });
+
+  const handleSelectUser = (user: UserWithUid) => {
+    setSelectedUser(user);
+    setSearchValue("");
+    setDropdownOpen(false);
+  };
 
   const handleAddMember = async () => {
-    if (!selectedUser) {
-      toast.error("✕ Виберіть користувача")
-      return
-    }
+    if (!selectedUser) return;
 
-    setIsAdding(true)
+    setIsAdding(true);
     try {
-      await addMember(roomId, selectedUser.uid, selectedUser.email, role)
-      const roleLabel = role === "admin" ? "Адміністратор" : "Користувач"
+      await addMember(roomId, selectedUser.uid, selectedUser.email, role);
+      const roleLabel = role === "admin" ? "Адміністратор" : "Користувач";
       toast.success(`✓ Користувача успішно додано`, {
         description: `${selectedUser.email} • ${roleLabel}`,
-      })
-      setSelectedUser(null)
-      setRole("user")
-      setSearchValue("")
-      setIsOpen(false)
-      onSuccess?.()
+      });
+      setIsOpen(false);
+      onSuccess?.();
     } catch (error) {
       toast.error(
-        error instanceof Error ? `✕ ${error.message}` : "✕ Помилка при додаванні користувача"
-      )
+        error instanceof Error
+          ? `✕ ${error.message}`
+          : "✕ Помилка при додаванні користувача",
+      );
     } finally {
-      setIsAdding(false)
+      setIsAdding(false);
     }
-  }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">+ Додати учасника</Button>
       </DialogTrigger>
@@ -155,71 +159,75 @@ export function AddMemberDialog({
           <DialogTitle>Додати учасника</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
+          <div className="relative">
             <label className="text-sm font-medium mb-2 block">Користувач</label>
-            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                  disabled={isAdding || isLoadingUsers}
-                >
-                  {selectedUser ? (
-                    <span>
-                      {selectedUser.name} • {selectedUser.email}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Пошук користувача...
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0" side="bottom" align="start">
-                <Command>
-                  <CommandInput
-                    placeholder="Пошук за поштою..."
-                    value={searchValue}
-                    onValueChange={setSearchValue}
-                    disabled={isLoadingUsers}
-                  />
-                  <CommandList ref={listRef}>
-                    {isLoadingUsers && filteredUsers.length === 0 ? (
-                      <CommandEmpty>Завантаження...</CommandEmpty>
-                    ) : filteredUsers.length === 0 ? (
-                      <CommandEmpty>Нікого не знайдено</CommandEmpty>
-                    ) : (
-                      <>
-                        {filteredUsers.map((user) => (
-                          <CommandItem
-                            key={user.uid}
-                            value={user.uid}
-                            onSelect={() => {
-                              setSelectedUser(user)
-                              setPopoverOpen(false)
-                              setSearchValue("")
-                            }}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{user.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {user.email}
-                              </span>
-                            </div>
-                          </CommandItem>
-                        ))}
-                        {hasMore && (
-                          <div ref={sentinelRef} className="h-px" />
-                        )}
-                        {isLoadingMore && (
-                          <CommandEmpty>Завантаження більше...</CommandEmpty>
-                        )}
-                      </>
+
+            {selectedUser && !dropdownOpen ? (
+              <button
+                type="button"
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-left"
+                onClick={() => setDropdownOpen(true)}
+                disabled={isAdding}
+              >
+                <span className="truncate">{selectedUser.email}</span>
+                <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                  Змінити
+                </span>
+              </button>
+            ) : (
+              <Input
+                placeholder="Пошук за поштою..."
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onFocus={() => setDropdownOpen(true)}
+                onBlur={() => setDropdownOpen(false)}
+                disabled={isAdding || isLoadingUsers}
+                autoComplete="off"
+              />
+            )}
+
+            {dropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full max-h-30 overflow-y-auto rounded-md border border-input bg-white shadow-md">
+                {isLoadingUsers ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Завантаження...
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Нікого не знайдено
+                  </div>
+                ) : (
+                  <>
+                    {filteredUsers.map((user) => (
+                      <div
+                        key={user.uid}
+                        role="option"
+                        aria-selected={selectedUser?.uid === user.uid}
+                        tabIndex={-1}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                        }}
+                        onClick={() => handleSelectUser(user)}
+                        className="cursor-pointer px-3 py-2 hover:bg-gray-100"
+                      >
+                        <div className="font-medium text-sm text-foreground">
+                          {user.email}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.name}
+                        </div>
+                      </div>
+                    ))}
+                    {hasMore && <div ref={sentinelRef} className="h-px" />}
+                    {isLoadingMore && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        Завантаження більше...
+                      </div>
                     )}
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -249,5 +257,5 @@ export function AddMemberDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

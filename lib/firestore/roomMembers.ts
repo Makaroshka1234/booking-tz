@@ -15,10 +15,6 @@ import type { RoomMember } from "@/types"
 
 const roomMembersCollection = collection(db, "roomMembers")
 
-/**
- * Add a member to a room by uid
- * Only room creator can add members
- */
 export async function addMember(
   roomId: string,
   uid: string,
@@ -30,7 +26,6 @@ export async function addMember(
     throw new Error("Ви не авторизовані")
   }
 
-  // Verify current user is room creator
   const roomRef = doc(db, "rooms", roomId)
   const roomSnapshot = await getDoc(roomRef)
 
@@ -42,7 +37,6 @@ export async function addMember(
     throw new Error("Тільки творець кімнати може додавати користувачів")
   }
 
-  // Check if already a member
   const memberId = `${roomId}_${uid}`
   const existingMemberRef = doc(db, "roomMembers", memberId)
   const existingMemberSnapshot = await getDoc(existingMemberRef)
@@ -51,7 +45,6 @@ export async function addMember(
     throw new Error(`Користувач з email "${email}" вже учасник цієї кімнати`)
   }
 
-  // Add member
   await setDoc(existingMemberRef, {
     id: memberId,
     roomId,
@@ -62,9 +55,6 @@ export async function addMember(
   })
 }
 
-/**
- * Remove a member from a room
- */
 export async function removeMember(
   roomId: string,
   uid: string
@@ -74,9 +64,6 @@ export async function removeMember(
   await deleteDoc(memberRef)
 }
 
-/**
- * Get a member's role in a room
- */
 export async function getMemberRole(
   roomId: string,
   uid: string

@@ -17,10 +17,6 @@ import type { Booking } from "@/types"
 
 const bookingsCollection = collection(db, "bookings")
 
-/**
- * Check if time intervals conflict.
- * Conflict occurs if: newStart < existingEnd && existingStart < newEnd
- */
 function hasConflict(
   newStart: Timestamp,
   newEnd: Timestamp,
@@ -62,19 +58,6 @@ async function assertNoConflict(
   }
 }
 
-/**
- * Create a booking with conflict detection.
- *
- * IMPORTANT: This function uses a client-side Firestore transaction to check for conflicts
- * and create the booking atomically. However, client-side transactions have limitations:
- * - They don't guarantee full serializability for queries (only for read-modify-write on specific documents)
- * - Race conditions can still occur between query execution and write
- * - Multiple concurrent clients may still create conflicting bookings
- *
- * For production-level reliability, this logic should be moved to a Cloud Function (callable)
- * which runs on the server with guaranteed serializability and can enforce constraints.
- * See: https://firebase.google.com/docs/firestore/solutions/sched-overlap
- */
 export async function createBooking(
   roomId: string,
   title: string,
@@ -106,12 +89,6 @@ export async function createBooking(
   })
 }
 
-/**
- * Update a booking with conflict detection.
- *
- * Same limitations as createBooking apply here regarding transaction serializability.
- * See createBooking for details.
- */
 export async function updateBooking(
   bookingId: string,
   roomId: string,
@@ -138,10 +115,7 @@ export async function updateBooking(
 
 export async function cancelBooking(bookingId: string): Promise<void> {
   const bookingRef = doc(db, "bookings", bookingId)
-  await updateDoc(bookingRef, {
-    // TODO: Add status field (e.g., "cancelled", "active") for soft delete
-    // For now, just delete it
-  })
+  await updateDoc(bookingRef, {})
 }
 
 export function subscribeToBookings(

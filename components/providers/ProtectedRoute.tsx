@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  requireAuth?: boolean // true = need auth, false = need to be logged out
+  requireAuth?: boolean
 }
 
 export function ProtectedRoute({

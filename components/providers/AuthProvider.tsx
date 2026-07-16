@@ -18,7 +18,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          // Fetch user document from Firestore
           const userDocRef = doc(db, "users", firebaseUser.uid)
           const userDocSnap = await getDoc(userDocRef)
 
@@ -26,7 +25,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const userData = userDocSnap.data() as User
             setData(userData)
           } else {
-            // Fallback to Firebase Auth user data if Firestore doc doesn't exist
             setData({
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || "",

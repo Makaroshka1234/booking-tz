@@ -47,9 +47,6 @@ export async function updateRoom(
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {
-  // TODO: Cascade delete related bookings and roomMembers
-  // - Delete all bookings where roomId === this room
-  // - Delete all roomMembers where roomId === this room
   const roomRef = doc(db, "rooms", roomId)
   await deleteDoc(roomRef)
 }
