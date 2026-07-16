@@ -48,7 +48,10 @@ export function BookingsSection({
     });
 
   const handleBookingError = (error: unknown) => {
-    const msg = error instanceof Error ? error.message : "Помилка при створенні бронювання";
+    const msg =
+      error instanceof Error
+        ? error.message
+        : "Помилка при створенні бронювання";
     if (msg.includes("Конфлікт бронювання")) {
       toast.error("⚠️ " + msg, {
         description: "Виберіть інший час",
@@ -79,7 +82,7 @@ export function BookingsSection({
 
       {isEmpty ? (
         <div className="text-center py-12 border-2 border-dashed rounded-lg">
-          <div className="text-4xl mb-4">📅</div>
+          <div className="text-4xl mb-4"></div>
           <h3 className="text-lg font-semibold mb-2">Бронювань не знайдено</h3>
           <p className="text-muted-foreground mb-6">
             Будьте першими, хто забронює цю кімнату
@@ -99,7 +102,10 @@ export function BookingsSection({
           </CreateDialog>
         </div>
       ) : (
-        <div ref={containerRef} className="max-h-90 overflow-y-auto pr-1 bg-white dark:bg-slate-950 rounded-lg">
+        <div
+          ref={containerRef}
+          className="max-h-90 overflow-y-auto pr-1 bg-white dark:bg-slate-950 rounded-lg"
+        >
           <div className="grid gap-4">
             {bookings.slice(0, visibleCount).map((booking) => (
               <BookingCard

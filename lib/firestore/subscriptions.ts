@@ -62,3 +62,13 @@ export function mapMemberDoc(doc: QueryDocumentSnapshot): RoomMember {
     addedAt: data.addedAt,
   }
 }
+
+export function mapUserDoc(doc: QueryDocumentSnapshot) {
+  const data = doc.data()
+  return {
+    uid: doc.id,
+    name: data.name,
+    email: data.email,
+    createdAt: data.createdAt,
+  }
+}

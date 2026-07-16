@@ -63,11 +63,13 @@ export function MembersPanel({ roomId, createdBy }: MembersPanelProps) {
     )
   }
 
+  const excludeUids = [createdBy, ...members.map((m) => m.uid)]
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h2 className="text-lg sm:text-xl font-semibold">Учасники кімнати</h2>
-        {isCreator && <AddMemberDialog roomId={roomId} />}
+        {isCreator && <AddMemberDialog roomId={roomId} excludeUids={excludeUids} />}
       </div>
 
       {members.length === 0 ? (

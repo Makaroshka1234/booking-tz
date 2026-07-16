@@ -7,10 +7,12 @@ export default function BookingsPage() {
       </div>
 
       <div className="state-empty">
-        <div className="state-empty-icon">📅</div>
+        <div className="state-empty-icon"></div>
         <h3 className="heading-4 mb-2">Бронювань не знайдено</h3>
-        <p className="text-caption">Перейдіть до кімнат щоб створити нове бронювання</p>
+        <p className="text-caption">
+          Перейдіть до кімнат щоб створити нове бронювання
+        </p>
       </div>
     </div>
-  )
+  );
 }

@@ -7,7 +7,6 @@ import {
   onSnapshot,
   query,
   where,
-  getDocs,
   Timestamp,
 } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
@@ -15,28 +14,14 @@ import { mapMemberDoc } from "@/lib/firestore/subscriptions"
 import type { RoomMember } from "@/types"
 
 const roomMembersCollection = collection(db, "roomMembers")
-const usersCollection = collection(db, "users")
 
 /**
- * Find user UID by email
- */
-async function getUserIdByEmail(email: string): Promise<string | null> {
-  const q = query(usersCollection, where("email", "==", email))
-  const snapshot = await getDocs(q)
-
-  if (snapshot.empty) {
-    return null
-  }
-
-  return snapshot.docs[0].id
-}
-
-/**
- * Add a member to a room by email
+ * Add a member to a room by uid
  * Only room creator can add members
  */
-export async function addMemberByEmail(
+export async function addMember(
   roomId: string,
+  uid: string,
   email: string,
   role: "admin" | "user"
 ): Promise<void> {
@@ -57,17 +42,8 @@ export async function addMemberByEmail(
     throw new Error("Тільки творець кімнати може додавати користувачів")
   }
 
-  // Find user by email
-  const userId = await getUserIdByEmail(email)
-
-  if (!userId) {
-    throw new Error(
-      `Користувача з email "${email}" не знайдено в системі. Переконайтеся, що користувач зареєстрований.`
-    )
-  }
-
   // Check if already a member
-  const memberId = `${roomId}_${userId}`
+  const memberId = `${roomId}_${uid}`
   const existingMemberRef = doc(db, "roomMembers", memberId)
   const existingMemberSnapshot = await getDoc(existingMemberRef)
 
@@ -79,7 +55,7 @@ export async function addMemberByEmail(
   await setDoc(existingMemberRef, {
     id: memberId,
     roomId,
-    uid: userId,
+    uid,
     email,
     role,
     addedAt: Timestamp.now(),
