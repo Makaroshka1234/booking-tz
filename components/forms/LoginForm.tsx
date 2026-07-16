@@ -1,28 +1,25 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
+import Link from "next/link"
 
 import { loginUser, getAuthErrorMessage } from "@/lib/auth"
 import { loginSchema, type LoginFormValues } from "@/lib/validators"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import Link from "next/link"
+import { FormBase } from "./FormBase"
 
 export function LoginForm() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -33,74 +30,64 @@ export function LoginForm() {
   })
 
   async function onSubmit(values: LoginFormValues) {
-    setIsLoading(true)
-    try {
-      await loginUser(values.email, values.password)
-      toast.success("Вхід успішний! Переспрямовування...")
-      router.push("/rooms")
-    } catch (error) {
-      toast.error(getAuthErrorMessage(error))
-    } finally {
-      setIsLoading(false)
-    }
+    await loginUser(values.email, values.password)
+    toast.success("Вхід успішний! Переспрямовування...")
+    router.push("/rooms")
   }
 
   return (
-    <div className="w-full max-w-md space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Вхід</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="w-full max-w-md space-y-3">
+      <div className="space-y-1 text-center">
+        <h1 className="text-xl font-bold tracking-tight">Вхід</h1>
+        <p className="text-xs text-muted-foreground">
           Увійдіть до свого акаунту для планування
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="your.email@example.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <FormBase
+        form={form}
+        onSubmit={onSubmit}
+        submitLabel="Увійти"
+        loadingLabel="Вхід..."
+        getErrorMessage={getAuthErrorMessage}
+        className="space-y-4"
+      >
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Пароль</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading || form.formState.isSubmitting}
-          >
-            {isLoading || form.formState.isSubmitting ? "Вхід..." : "Увійти"}
-          </Button>
-        </form>
-      </Form>
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Пароль</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </FormBase>
 
       <div className="text-center text-sm">
         <span className="text-muted-foreground">Немаєте акаунту? </span>

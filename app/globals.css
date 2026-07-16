@@ -11,8 +11,8 @@
   --muted-foreground: 0 0% 45.1%;
   --accent: 0 0% 9.02%;
   --accent-foreground: 0 0% 98%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
   --border: 0 0% 89.8%;
   --input: 0 0% 89.8%;
   --primary: 0 0% 9.02%;
@@ -35,8 +35,8 @@
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 98%;
     --accent-foreground: 0 0% 9.02%;
-    --destructive: 0 86.1% 66.3%;
-    --destructive-foreground: 0 0% 9.02%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --primary: 0 0% 98%;
@@ -54,4 +54,148 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+}
+
+/* === COMPONENT LAYER === */
+@layer components {
+  /* Headings */
+  .heading-1 {
+    @apply text-4xl sm:text-5xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply text-2xl sm:text-3xl font-bold;
+  }
+
+  .heading-3 {
+    @apply text-xl sm:text-2xl font-semibold;
+  }
+
+  .heading-4 {
+    @apply text-lg font-semibold;
+  }
+
+  /* Text */
+  .text-subtitle {
+    @apply text-lg;
+    color: hsl(var(--muted-foreground));
+  }
+
+  .text-caption {
+    @apply text-xs;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Cards */
+  .card-base {
+    @apply rounded-lg p-4 transition-shadow;
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card));
+  }
+
+  .card-base:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-interactive {
+    @apply rounded-lg p-4 cursor-pointer transition-all;
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--card));
+  }
+
+  .card-interactive:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    opacity: 0.95;
+  }
+
+  /* Containers */
+  .container-base {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-sm {
+    @apply max-w-2xl mx-auto px-4;
+  }
+
+  /* Layouts */
+  .layout-center {
+    @apply min-h-screen flex flex-col items-center justify-center px-4;
+  }
+
+  .layout-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6;
+  }
+
+  .layout-grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6;
+  }
+
+  /* States */
+  .state-loading {
+    @apply animate-pulse rounded;
+    background-color: hsl(var(--muted));
+  }
+
+  .state-empty {
+    @apply text-center py-12 border-2 border-dashed rounded-lg;
+    border-color: hsl(var(--border));
+  }
+
+  .state-empty-icon {
+    @apply text-4xl mb-4;
+  }
+
+  /* Buttons */
+  .btn-icon-only {
+    @apply size-9 flex items-center justify-center rounded-lg transition-colors;
+  }
+
+  .btn-icon-only:hover {
+    background-color: hsl(var(--accent));
+  }
+
+  /* Destructive button variant */
+  .btn-destructive {
+    background-color: hsl(var(--destructive));
+    color: hsl(var(--destructive-foreground));
+  }
+
+  .btn-destructive:hover {
+    opacity: 0.9;
+  }
+
+  /* Badges */
+  .badge-success {
+    @apply inline-block text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-2 py-1 rounded;
+  }
+
+  .badge-warning {
+    @apply inline-block text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-1 rounded;
+  }
+
+  .badge-error {
+    @apply inline-block text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 px-2 py-1 rounded;
+  }
+
+  .badge-info {
+    @apply inline-block text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-2 py-1 rounded;
+  }
+
+  /* Forms */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-row {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+  }
+
+  /* Sections */
+  .section-header {
+    @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4;
+  }
+
+  .section-title {
+    @apply text-xl sm:text-2xl font-bold;
+  }
 }

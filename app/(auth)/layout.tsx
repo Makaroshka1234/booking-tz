@@ -1,4 +1,4 @@
-import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { ProtectedRoute } from "@/components/providers/ProtectedRoute"
 
 export default function AuthLayout({
   children,
@@ -7,8 +7,8 @@ export default function AuthLayout({
 }) {
   return (
     <ProtectedRoute requireAuth={false}>
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 to-slate-800 px-4">
-        <div className="w-full max-w-md">{children}</div>
+      <div className="h-screen flex items-center justify-center bg-white p-4">
+        <div className="w-full max-w-md max-h-screen overflow-y-auto">{children}</div>
       </div>
     </ProtectedRoute>
   )

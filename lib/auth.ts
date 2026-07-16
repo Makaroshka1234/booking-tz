@@ -5,7 +5,7 @@ import {
   updateProfile,
   UserCredential,
 } from "firebase/auth"
-import { doc, setDoc, Timestamp } from "firebase/firestore"
+import { doc, setDoc, getDoc, Timestamp } from "firebase/firestore"
 import { auth, db } from "./firebase"
 import type { User } from "@/types"
 
@@ -29,6 +29,16 @@ export function getAuthErrorMessage(error: unknown): string {
   }
 }
 
+function buildUserRecord(uid: string, name: string, email: string, createdAt: Timestamp): User {
+  return { uid, name, email, createdAt }
+}
+
+async function getUserDoc(uid: string): Promise<User | null> {
+  const userDocRef = doc(db, "users", uid)
+  const userDocSnap = await getDoc(userDocRef)
+  return userDocSnap.exists() ? (userDocSnap.data() as User) : null
+}
+
 export async function registerUser(
   name: string,
   email: string,
@@ -43,12 +53,7 @@ export async function registerUser(
 
   await updateProfile(firebaseUser, { displayName: name })
 
-  const userDoc: User = {
-    uid: firebaseUser.uid,
-    name,
-    email,
-    createdAt: Timestamp.now(),
-  }
+  const userDoc = buildUserRecord(firebaseUser.uid, name, email, Timestamp.now())
 
   await setDoc(doc(db, "users", firebaseUser.uid), userDoc)
 
@@ -63,12 +68,12 @@ export async function loginUser(email: string, password: string): Promise<User> 
   )
   const firebaseUser = userCredential.user
 
-  return {
-    uid: firebaseUser.uid,
-    name: firebaseUser.displayName || "",
-    email: firebaseUser.email || "",
-    createdAt: Timestamp.now(),
+  const userDoc = await getUserDoc(firebaseUser.uid)
+  if (userDoc) {
+    return userDoc
   }
+
+  return buildUserRecord(firebaseUser.uid, firebaseUser.displayName || "", firebaseUser.email || "", Timestamp.now())
 }
 
 export async function logoutUser(): Promise<void> {

@@ -12,7 +12,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { setUser, setLoading } = useAuthStore()
+  const { setData, setLoading } = useAuthStore()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -24,10 +24,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data() as User
-            setUser(userData)
+            setData(userData)
           } else {
             // Fallback to Firebase Auth user data if Firestore doc doesn't exist
-            setUser({
+            setData({
               uid: firebaseUser.uid,
               name: firebaseUser.displayName || "",
               email: firebaseUser.email || "",
@@ -36,16 +36,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } catch (error) {
           console.error("Error fetching user data:", error)
-          setUser(null)
+          setData(null)
         }
       } else {
-        setUser(null)
+        setData(null)
       }
       setLoading(false)
     })
 
     return () => unsubscribe()
-  }, [setUser, setLoading])
+  }, [setData, setLoading])
 
   return <>{children}</>
 }

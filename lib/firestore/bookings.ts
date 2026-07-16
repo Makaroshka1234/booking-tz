@@ -12,6 +12,7 @@ import {
   getDocs,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { mapBookingDoc } from "@/lib/firestore/subscriptions"
 import type { Booking } from "@/types"
 
 const bookingsCollection = collection(db, "bookings")
@@ -31,6 +32,34 @@ function hasConflict(
   const existingEndMs = existing.endTime.toMillis()
 
   return newStartMs < existingEndMs && existingStartMs < newEndMs
+}
+
+async function assertNoConflict(
+  roomId: string,
+  startTimestamp: Timestamp,
+  endTimestamp: Timestamp,
+  excludeId?: string
+): Promise<void> {
+  const q = query(bookingsCollection, where("roomId", "==", roomId))
+  const snapshot = await getDocs(q)
+
+  const conflictingBooking = snapshot.docs.find((docSnap) => {
+    if (excludeId && docSnap.id === excludeId) return false
+    const booking = docSnap.data()
+    return hasConflict(startTimestamp, endTimestamp, {
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+    })
+  })
+
+  if (conflictingBooking) {
+    const conflict = conflictingBooking.data()
+    const conflictStart = conflict.startTime.toDate().toLocaleTimeString("uk-UA")
+    const conflictEnd = conflict.endTime.toDate().toLocaleTimeString("uk-UA")
+    throw new Error(
+      `Конфлікт бронювання: час ${conflictStart} — ${conflictEnd} вже зайнятий (бронювання "${conflict.title}")`
+    )
+  }
 }
 
 /**
@@ -58,29 +87,8 @@ export async function createBooking(
   const endTimestamp = Timestamp.fromDate(endTime)
 
   return runTransaction(db, async (transaction) => {
-    // Query all bookings for this room
-    const q = query(bookingsCollection, where("roomId", "==", roomId))
-    const snapshot = await getDocs(q)
+    await assertNoConflict(roomId, startTimestamp, endTimestamp)
 
-    // Check for conflicts
-    const conflictingBooking = snapshot.docs.find((docSnap) => {
-      const booking = docSnap.data()
-      return hasConflict(startTimestamp, endTimestamp, {
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-      })
-    })
-
-    if (conflictingBooking) {
-      const conflict = conflictingBooking.data()
-      const conflictStart = conflict.startTime.toDate().toLocaleTimeString("uk-UA")
-      const conflictEnd = conflict.endTime.toDate().toLocaleTimeString("uk-UA")
-      throw new Error(
-        `Конфлікт бронювання: час ${conflictStart} — ${conflictEnd} вже зайнятий (бронювання "${conflict.title}")`
-      )
-    }
-
-    // No conflict, create the booking
     const bookingData = {
       roomId,
       title,
@@ -116,31 +124,8 @@ export async function updateBooking(
   const endTimestamp = Timestamp.fromDate(endTime)
 
   return runTransaction(db, async (transaction) => {
-    // Query all other bookings for this room (excluding this one)
-    const q = query(bookingsCollection, where("roomId", "==", roomId))
-    const snapshot = await getDocs(q)
+    await assertNoConflict(roomId, startTimestamp, endTimestamp, bookingId)
 
-    // Check for conflicts with other bookings
-    const conflictingBooking = snapshot.docs.find((docSnap) => {
-      if (docSnap.id === bookingId) return false // Skip self
-
-      const booking = docSnap.data()
-      return hasConflict(startTimestamp, endTimestamp, {
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-      })
-    })
-
-    if (conflictingBooking) {
-      const conflict = conflictingBooking.data()
-      const conflictStart = conflict.startTime.toDate().toLocaleTimeString("uk-UA")
-      const conflictEnd = conflict.endTime.toDate().toLocaleTimeString("uk-UA")
-      throw new Error(
-        `Конфлікт бронювання: час ${conflictStart} — ${conflictEnd} вже зайнятий (бронювання "${conflict.title}")`
-      )
-    }
-
-    // No conflict, update the booking
     const bookingRef = doc(db, "bookings", bookingId)
     transaction.update(bookingRef, {
       title,
@@ -170,21 +155,7 @@ export function subscribeToBookings(
   )
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    const bookings: (Booking & { id: string })[] = []
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      bookings.push({
-        id: doc.id,
-        roomId: data.roomId,
-        title: data.title,
-        description: data.description,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        createdBy: data.createdBy,
-        participants: data.participants || [data.createdBy],
-        createdAt: data.createdAt,
-      } as Booking & { id: string })
-    })
+    const bookings = snapshot.docs.map(mapBookingDoc)
     onBookingsChange(bookings)
   })
 

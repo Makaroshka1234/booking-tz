@@ -1,4 +1,4 @@
-import { ProtectedRoute } from "@/components/ProtectedRoute"
+import { ProtectedRoute } from "@/components/providers/ProtectedRoute"
 
 export default function DashboardLayout({
   children,

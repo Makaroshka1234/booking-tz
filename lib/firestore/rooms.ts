@@ -13,6 +13,7 @@ import {
   documentId,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { createSubscription, mapRoomDoc } from "@/lib/firestore/subscriptions"
 import type { Room } from "@/types"
 
 const roomsCollection = collection(db, "rooms")
@@ -53,51 +54,35 @@ export async function deleteRoom(roomId: string): Promise<void> {
   await deleteDoc(roomRef)
 }
 
+const subscribeAllRooms = createSubscription(
+  () => query(roomsCollection, orderBy("createdAt", "desc")),
+  mapRoomDoc
+)
+
+const subscribeMyRooms = (uid: string) =>
+  createSubscription(
+    () => query(roomsCollection, where("createdBy", "==", uid), orderBy("createdAt", "desc")),
+    mapRoomDoc
+  )
+
 export function subscribeToRooms(
   onRoomsChange: (rooms: (Room & { id: string })[]) => void
 ): () => void {
-  const q = query(roomsCollection, orderBy("createdAt", "desc"))
-
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const rooms: (Room & { id: string })[] = []
-    snapshot.forEach((doc) => {
-      rooms.push({
-        id: doc.id,
-        ...doc.data(),
-      } as Room & { id: string })
-    })
-    onRoomsChange(rooms)
-  })
-
-  return unsubscribe
+  return subscribeAllRooms(onRoomsChange)
 }
 
 export function subscribeToMyRooms(
   uid: string,
   onRoomsChange: (rooms: (Room & { id: string })[]) => void
 ): () => void {
-  const q = query(roomsCollection, where("createdBy", "==", uid), orderBy("createdAt", "desc"))
-
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const rooms: (Room & { id: string })[] = []
-    snapshot.forEach((doc) => {
-      rooms.push({
-        id: doc.id,
-        ...doc.data(),
-      } as Room & { id: string })
-    })
-    onRoomsChange(rooms)
-  })
-
-  return unsubscribe
+  return subscribeMyRooms(uid)(onRoomsChange)
 }
 
 export function subscribeToJoinedRooms(
   uid: string,
   onRoomsChange: (rooms: (Room & { id: string })[]) => void
 ): () => void {
-  const roomMembersCollection = collection(db, "roomMembers")
-  const q = query(roomMembersCollection, where("uid", "==", uid))
+  const q = query(collection(db, "roomMembers"), where("uid", "==", uid))
 
   const unsubscribe = onSnapshot(q, async (snapshot) => {
     const roomIds = snapshot.docs.map((doc) => doc.data().roomId)
@@ -115,10 +100,7 @@ export function subscribeToJoinedRooms(
       const roomsSnapshot = await getDocs(roomsQuery)
 
       roomsSnapshot.forEach((doc) => {
-        rooms.push({
-          id: doc.id,
-          ...doc.data(),
-        } as Room & { id: string })
+        rooms.push(mapRoomDoc(doc))
       })
     }
 

@@ -3,5 +3,6 @@
 import { useAuthStore } from "@/store/useAuthStore"
 
 export function useAuth() {
-  return useAuthStore()
+  const { data, loading } = useAuthStore()
+  return { user: data, loading }
 }

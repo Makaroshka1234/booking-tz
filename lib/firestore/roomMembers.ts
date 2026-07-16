@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from "firebase/firestore"
 import { auth, db } from "@/lib/firebase"
+import { mapMemberDoc } from "@/lib/firestore/subscriptions"
 import type { RoomMember } from "@/types"
 
 const roomMembersCollection = collection(db, "roomMembers")
@@ -115,9 +116,6 @@ export async function getMemberRole(
   return snapshot.data().role
 }
 
-/**
- * Subscribe to all members of a room
- */
 export function subscribeToMembers(
   roomId: string,
   onMembersChange: (members: RoomMember[]) => void
@@ -125,18 +123,7 @@ export function subscribeToMembers(
   const q = query(roomMembersCollection, where("roomId", "==", roomId))
 
   const unsubscribe = onSnapshot(q, (snapshot) => {
-    const members: RoomMember[] = []
-    snapshot.forEach((doc) => {
-      const data = doc.data()
-      members.push({
-        id: data.id,
-        roomId: data.roomId,
-        uid: data.uid,
-        email: data.email,
-        role: data.role,
-        addedAt: data.addedAt,
-      } as RoomMember)
-    })
+    const members = snapshot.docs.map(mapMemberDoc)
     onMembersChange(members)
   })
 
