@@ -13,6 +13,11 @@
 # testing
 /coverage
 
+AGENTS.md
+CLAUDE.md
+MOBILE_RESPONSIVE.md
+REFACTORING_AUDIT.md
+STYLES_GUIDE.md
 # next.js
 /.next/
 /out/
