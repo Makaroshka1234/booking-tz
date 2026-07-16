@@ -16,7 +16,8 @@
 # next.js
 /.next/
 /out/
-
+firestore.rules
+PROGRESS.md
 # production
 /build
 SETUP.md

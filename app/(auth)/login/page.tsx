@@ -1,4 +1,5 @@
-// TODO: Implement login page
-// - LoginForm component
-// - Link to register
-// - Redirect if already authenticated
+import { LoginForm } from "@/components/forms/LoginForm"
+
+export default function LoginPage() {
+  return <LoginForm />
+}

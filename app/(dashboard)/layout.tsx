@@ -1,6 +1,9 @@
-// TODO: Dashboard layout
-// - Sidebar/navigation
-// - User menu
-// - Logout button
-// - Protected route check
-// - Breadcrumbs
+import { ProtectedRoute } from "@/components/ProtectedRoute"
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <ProtectedRoute requireAuth>{children}</ProtectedRoute>
+}
